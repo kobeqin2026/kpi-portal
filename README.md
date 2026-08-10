@@ -147,3 +147,17 @@ package.json            依赖 (express / cookie-parser / dotenv)
 - 三级 Test Plan 关联聚合（BFS outward 链接，解决 BR200-123 父计划 0 直接子任务问题）。
 - 登录复用 Hardware 用户库 + 会话 cookie（内存）。
 - 30s 自动刷新、深色单页、独立的 source-scoped 项目下拉（不做全局项目切换）。
+
+---
+
+## 9. 协同源码仓库
+
+本门户聚合的三个子系统源码，GitHub 仓库如下（每个子系统同步在 GitLab E01718 / pel-val 名下）：
+
+| 子系统（端口） | GitHub 仓库 |
+|------|-----------|
+| 8088 日报状态 / Bug 诊断（gpu-tracker） | https://github.com/kobeqin2026/enhanced-gpu-bu-daily-status-tracker |
+| 8089 JIRA 用例管理 | https://github.com/kobeqin2026/jira-test-case-management |
+| 3002 硬件资源预约 | https://github.com/kobeqin2026/hardware-reservation-platform |
+
+本仓库（kpi-portal）GitHub：https://github.com/kobeqin2026/kpi-portal
