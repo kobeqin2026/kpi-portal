@@ -152,12 +152,12 @@ package.json            依赖 (express / cookie-parser / dotenv)
 
 ## 9. 协同源码仓库
 
-本门户聚合的三个子系统源码，GitHub 仓库如下（每个子系统同步在 GitLab E01718 / pel-val 名下）：
+本门户聚合的三个子系统源码，GitHub / GitLab 仓库如下：
 
-| 子系统（端口） | GitHub 仓库 |
-|------|-----------|
-| 8088 日报状态 / Bug 诊断（gpu-tracker） | https://github.com/kobeqin2026/enhanced-gpu-bu-daily-status-tracker |
-| 8089 JIRA 用例管理 | https://github.com/kobeqin2026/jira-test-case-management |
-| 3002 硬件资源预约 | https://github.com/kobeqin2026/hardware-reservation-platform |
+| 子系统（端口） | GitHub | GitLab E01718 | GitLab pel-val |
+|------|--------|---------------|----------------|
+| 8088 日报状态 / Bug 诊断（gpu-tracker） | https://github.com/kobeqin2026/enhanced-gpu-bu-daily-status-tracker | https://gitlab.birentech.com/E01718/gpu-tracker | https://gitlab.birentech.com/pel-val/validation/jira-diagnosis-platform |
+| 8089 JIRA 用例管理 | https://github.com/kobeqin2026/jira-test-case-management | https://gitlab.birentech.com/E01718/jira-test-case-management | https://gitlab.birentech.com/pel-val/validation/jira-test-case-management |
+| 3002 硬件资源预约 | https://github.com/kobeqin2026/hardware-reservation-platform | https://gitlab.birentech.com/E01718/hardware-reservation-platform | https://gitlab.birentech.com/pel-val/validation/hardware-reservation-platform |
 
 本仓库（kpi-portal）GitHub：https://github.com/kobeqin2026/kpi-portal
