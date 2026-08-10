@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GPU Bring-up 统一门户</title>
+<style>
+  :root {
+    --bg: #0f1420; --panel: #171d2b; --panel2: #1d2436; --border: #2a3350;
+    --text: #e6e9f2; --muted: #8b93a7; --accent: #4f8cff;
+    --green: #3ddc84; --red: #ff5c5c; --yellow: #ffc53d; --purple: #b57bff; --teal: #22d3ee; --orange: #ff9f43;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", Roboto, sans-serif;
+    background: radial-gradient(1200px 500px at 20% -10%, #1b2740 0%, var(--bg) 55%);
+    color: var(--text); min-height: 100vh; padding: 28px 32px 60px;
+  }
+  a { color: var(--accent); text-decoration: none; }
+  select {
+    background: var(--panel2); color: var(--text); border: 1px solid var(--border);
+    border-radius: 8px; padding: 7px 10px; font-size: 12px; outline: none; max-width: 180px;
+  }
+  select:focus { border-color: var(--accent); }
+
+  .header { max-width: 1280px; margin: 0 auto 24px; display: flex; align-items: flex-end; justify-content: space-between; flex-wrap: wrap; gap: 14px; }
+  .brand h1 { font-size: 26px; font-weight: 700; letter-spacing: .5px; }
+  .brand h1 span { color: var(--accent); }
+  .brand p { color: var(--muted); font-size: 13px; margin-top: 6px; }
+  .brand .sub { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 6px; font-size: 12px; color: var(--muted); }
+  .toolbar { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .userchip { display: flex; align-items: center; gap: 10px; background: var(--panel2); border: 1px solid var(--border); border-radius: 10px; padding: 8px 14px; font-size: 13px; }
+  .userchip .avatar { width: 30px; height: 30px; border-radius: 50%; background: linear-gradient(135deg, var(--accent), var(--purple)); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 13px; }
+  .userchip .uname { font-weight: 600; }
+  .role-badge { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+  .role-badge.admin { background: rgba(181,123,255,.16); color: var(--purple); }
+  .role-badge.owner { background: rgba(34,211,238,.14); color: var(--teal); }
+  .btn { background: var(--panel2); color: var(--text); border: 1px solid var(--border); padding: 8px 16px; border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: 600; transition: .18s; white-space: nowrap; }
+  .btn:hover { border-color: var(--accent); background: #232c44; }
+  .btn:disabled { opacity: .5; cursor: not-allowed; }
+  .btn.danger:hover { border-color: var(--red); color: var(--red); }
+  .time { font-size: 12px; color: var(--muted); text-align: right; line-height: 1.5; }
+  .time b { color: var(--text); font-size: 13px; }
+
+  .systems { max-width: 1280px; margin: 0 auto 26px; display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 18px; }
+  .sys { position: relative; display: block; background: linear-gradient(160deg, var(--panel) 0%, #131a2a 100%); border: 1px solid var(--border); border-radius: 14px; padding: 20px 20px 18px; transition: .2s; overflow: hidden; }
+  .sys:hover { transform: translateY(-3px); border-color: var(--sys-color); box-shadow: 0 10px 30px rgba(0,0,0,.35); }
+  .sys::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: var(--sys-color); }
+  .sys .top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+  .sys .ic { font-size: 26px; }
+  .sys h3 { font-size: 15px; font-weight: 800; }
+  .sys .url { color: var(--muted); font-size: 11px; margin-top: 2px; font-family: ui-monospace, monospace; }
+  .sys .src { display:inline-block; margin-top:4px; font-size:10px; color:var(--muted); }
+  .sys .src b { color: var(--sys-color); font-weight:600; }
+  .sys .status { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 20px; }
+  .sys .status.ok { color: var(--green); background: rgba(61,220,132,.12); }
+  .sys .status.err { color: var(--red); background: rgba(255,92,92,.12); }
+  .sys .status .dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+  .sys .mini { display: flex; gap: 22px; margin: 8px 0 14px; }
+  .sys .mini .kv b { font-size: 20px; font-weight: 700; display: block; }
+  .sys .mini .kv span { font-size: 11px; color: var(--muted); }
+  .sys .goto { font-size: 13px; font-weight: 600; color: var(--sys-color); }
+  .sys:hover .goto span { display:inline-block; transform: translateX(4px); }
+
+  .wrap { max-width: 1280px; margin: 0 auto; display: flex; flex-direction: column; gap: 18px; }
+  .kpi-card { background: var(--panel); border: 1px solid var(--border); border-radius: 14px; padding: 18px 20px; }
+  .kpi-card .head { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
+  .kpi-card .head .bar { width: 4px; height: 22px; border-radius: 2px; background: var(--sys-color); }
+  .kpi-card .head h2 { font-size: 16px; font-weight: 700; }
+  .kpi-card .head .scope { display:flex; align-items:center; gap:8px; background: var(--panel2); border:1px solid var(--border); border-radius:8px; padding:4px 6px 4px 12px; }
+  .kpi-card .head .scope span { font-size: 11px; color: var(--muted); }
+  .kpi-card .head a { font-size: 12px; margin-left: auto; color: var(--muted); white-space:nowrap; }
+  .kpi-card .head a:hover { color: var(--accent); }
+  .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 14px; }
+  .tile { background: var(--panel2); border: 1px solid var(--border); border-radius: 10px; padding: 14px 14px 12px; transition: .15s; }
+  .tile:hover { border-color: var(--sys-color); }
+  .tile .num { font-size: 26px; font-weight: 800; line-height: 1; color: var(--sys-color); }
+  .tile .lbl { font-size: 12px; color: var(--muted); margin-top: 8px; }
+  .tile .lbl small { display: block; font-size: 11px; margin-top: 3px; color: #5c6680; }
+  .meta { margin-top: 10px; font-size: 12px; color: var(--muted); }
+  .error-msg { color: var(--red); font-size: 13px; }
+  .stagetrack { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+  .stagechip { display: flex; align-items: center; gap: 8px; background: var(--panel2); border: 1px solid var(--border); border-radius: 8px; padding: 6px 12px; font-size: 12px; }
+  .stagechip .sw { color: var(--muted); }
+  .stagechip.active { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+  .tag { display:inline-block; padding:2px 8px; border-radius:6px; font-size:11px; font-weight:600; background:rgba(79,140,255,.15); color:var(--accent); margin-left:6px; }
+
+  .overlay { position: fixed; inset: 0; background: radial-gradient(1000px 500px at 50% -10%, #1b2740 0%, var(--bg) 60%); display: flex; align-items: center; justify-content: center; z-index: 100; }
+  .overlay.hidden { display: none; }
+  .loginbox { width: 360px; background: var(--panel); border: 1px solid var(--border); border-radius: 16px; padding: 34px 34px 30px; box-shadow: 0 20px 60px rgba(0,0,0,.5); }
+  .loginbox .lg { text-align: center; }
+  .loginbox .lg .ic { font-size: 40px; }
+  .loginbox .lg h2 { font-size: 20px; margin: 12px 0 4px; }
+  .loginbox .lg h2 span { color: var(--accent); }
+  .loginbox .lg p { color: var(--muted); font-size: 12px; margin-bottom: 22px; }
+  .loginbox label { display: block; font-size: 12px; color: var(--muted); margin: 12px 0 6px; }
+  .loginbox input { width: 100%; padding: 11px 13px; background: var(--panel2); color: var(--text); border: 1px solid var(--border); border-radius: 8px; font-size: 13px; outline:none; }
+  .loginbox .btn { width: 100%; margin-top: 22px; padding: 11px; font-size: 14px; background: linear-gradient(135deg, var(--accent), #6a5cff); border: none; }
+  .loginbox .btn:hover { filter: brightness(1.1); }
+  .loginerr { color: var(--red); font-size: 12px; min-height: 16px; margin-top: 10px; text-align: center; }
+  .loginhint { text-align: center; margin-top: 16px; font-size: 11px; color: var(--muted); }
+
+  .foot { max-width: 1280px; margin: 26px auto 0; color: var(--muted); font-size: 12px; text-align: center; }
+</style>
+</head>
+<body>
+
+<div class="overlay" id="login-overlay">
+  <form class="loginbox" id="login-form" autocomplete="off">
+    <div class="lg">
+      <div class="ic">🚀</div>
+      <h2>GPU Bring-up <span>统一门户</span></h2>
+      <p>请使用 Hardware 平台账号登录（管理员 / 域负责人）</p>
+    </div>
+    <label for="login-name">用户名</label>
+    <input id="login-name" type="text" placeholder="如 admin / board" required>
+    <label for="login-pass">密码</label>
+    <input id="login-pass" type="password" placeholder="••••••••" required>
+    <button class="btn" type="submit" id="login-btn">登 录</button>
+    <div class="loginerr" id="login-err"></div>
+  </form>
+</div>
+
+<div class="header" id="header">
+  <div class="brand">
+    <h1>GPU Bring-up <span>统一门户</span></h1>
+    <p>聚合日报(手动) / JIRA Bug / 测试用例 / 硬件预约 的核心 KPI · 各区块按各自数据源独立选择</p>
+    <div class="sub">
+      <span id="whoami" style="display:none"></span>
+      <span id="auto-state">自动刷新：30秒</span>
+    </div>
+  </div>
+  <div class="toolbar">
+    <div class="userchip" id="userchip" style="display:none">
+      <div class="avatar" id="u-avatar">?</div>
+      <div>
+        <div class="uname" id="u-name">—</div>
+        <div><span class="role-badge admin" id="u-role" style="display:none">管理员</span></div>
+      </div>
+    </div>
+    <div class="time">最近更新<br><b id="update-time">—</b></div>
+    <button class="btn" id="refresh-btn">⟳ 刷新</button>
+    <button class="btn danger" id="logout-btn">退出</button>
+  </div>
+</div>
+
+<!-- 三个系统入口（纯跳转，不承载项目联动） -->
+<div class="systems">
+  <a class="sys" data-color="#4f8cff" href="http://10.49.5.188:8088/gpu-bringup/" target="_blank">
+    <div class="top"><span class="ic">🐛</span>
+      <span><h3>GPU Bring-up 日报 & Bug</h3><div class="url">10.49.5.188:8088</div></span>
+    </div>
+    <span class="status" id="st-gpu"><span class="dot"></span><span>检测中</span></span>
+    <div class="src">数据源：每日任务 <b>手动录入</b> / JIRA Bug <b>来自 JIRA</b></div>
+    <div class="mini">
+      <div class="kv"><b id="gpu-total">–</b><span>JIRA总Bug</span></div>
+      <div class="kv"><b id="d-domain">–</b><span>域数量</span></div>
+      <div class="kv"><b id="d-ecrate">–</b><span>BU准出通过</span></div>
+    </div>
+    <span class="goto">进入系统 <span>→</span></span>
+  </a>
+  <a class="sys" data-color="#22d3ee" href="http://10.49.5.188:8089/" target="_blank">
+    <div class="top"><span class="ic">🧪</span>
+      <span><h3>JIRA Test Case 管理</h3><div class="url">10.49.5.188:8089</div></span>
+    </div>
+    <span class="status" id="st-testcase"><span class="dot"></span><span>检测中</span></span>
+    <div class="src">数据源：<b>来自 JIRA</b>（BR200）</div>
+    <div class="mini">
+      <div class="kv"><b id="tc-total">–</b><span>总用例</span></div>
+      <div class="kv"><b id="tc-done">–</b><span>已完成</span></div>
+      <div class="kv"><b id="tc-progress">–</b><span>进行中</span></div>
+    </div>
+    <span class="goto">进入系统 <span>→</span></span>
+  </a>
+  <a class="sys" data-color="#3ddc84" href="http://10.49.5.188:3002/" target="_blank">
+    <div class="top"><span class="ic">🖥️</span>
+      <span><h3>硬件资源预约</h3><div class="url">10.49.5.188:3002</div></span>
+    </div>
+    <span class="status" id="st-hw"><span class="dot"></span><span>检测中</span></span>
+    <div class="src">数据源：<b>手动录入</b></div>
+    <div class="mini">
+      <div class="kv"><b id="hw-stage">–</b><span>当前阶段</span></div>
+      <div class="kv"><b id="hw-inuse">–</b><span>在用平台</span></div>
+      <div class="kv"><b id="hw-idle">–</b><span>空闲</span></div>
+    </div>
+    <span class="goto">进入系统 <span>→</span></span>
+  </a>
+</div>
+
+<div class="wrap">
+  <!-- JIRA Bug (8088) -->
+  <div class="kpi-card" style="--sys-color:#4f8cff">
+    <div class="head"><span class="bar"></span><h2>🐛 JIRA Bug 诊断</h2>
+      <span class="scope"><span>JIRA项目</span><select id="jira-project-select"><option>加载中…</option></select></span>
+      <a href="http://10.49.5.188:8088/gpu-bringup/" target="_blank">打开 Dashboard ↗</a></div>
+    <div class="kpis" id="kpi-gpu"></div>
+  </div>
+
+  <!-- Bringup Daily Task (8088 手录) -->
+  <div class="kpi-card" style="--sys-color:#ff9f43">
+    <div class="head"><span class="bar"></span><h2>📋 Bringup Daily Task（手动录入）</h2>
+      <span class="scope"><span>日报项目</span><select id="daily-project-select"><option>加载中…</option></select></span>
+      <a href="http://10.49.5.188:8088/gpu-bringup/" target="_blank">打开日报 ↗</a></div>
+    <div class="kpis" id="kpi-daily"></div>
+    <div class="meta" id="daily-meta"></div>
+  </div>
+
+  <!-- 测试用例 (8089) -->
+  <div class="kpi-card" style="--sys-color:#22d3ee">
+    <div class="head"><span class="bar"></span><h2>🧪 测试用例（来自 JIRA）</h2>
+      <span class="scope"><span>Test项目</span><select id="tc-project-select"><option>加载中…</option></select></span>
+      <span class="scope"><span>Test Plan</span><select id="tc-plan-select" style="max-width:240px"><option>加载中…</option></select></span>
+      <a href="http://10.49.5.188:8089/" target="_blank">打开 Test Case 管理 ↗</a></div>
+    <div class="kpis" id="kpi-testcase"></div>
+    <div class="meta" id="tc-meta"></div>
+  </div>
+
+  <!-- 硬件预约 (3002) -->
+  <div class="kpi-card" style="--sys-color:#3ddc84">
+    <div class="head"><span class="bar"></span><h2>🖥️ 硬件资源预约（手动录入）</h2>
+      <span class="scope"><span>硬件项目</span><select id="hw-project-select"><option>加载中…</option></select></span>
+      <a href="http://10.49.5.188:3002/" target="_blank">打开预约平台 ↗</a></div>
+    <div class="kpis" id="kpi-hw"></div>
+  </div>
+</div>
+
+<div class="foot">GPU Bring-up 统一门户 · 后端 kpi-portal (:3005) · 登录复用 Hardware 账号 · 各区块数据源独立</div>
+
+<script>
+var app = { user: null, jiraProjects: [], dailyProjects: [], hwProjects: [], tcProjects: [], tcPlans: [],
+            jiraProject: '', dailyProject: '', hwProject: '', tcProject: '', tcPlan: '' };
+
+document.querySelectorAll('.sys').forEach(function(el){ el.style.setProperty('--sys-color', el.getAttribute('data-color')); });
+function qs(id){ return document.getElementById(id); }
+
+/* ---------------- 登录 ---------------- */
+qs('login-form').addEventListener('submit', async function(e){
+  e.preventDefault();
+  var err=qs('login-err'); err.textContent=''; var btn=qs('login-btn'); btn.disabled=true; btn.textContent='登录中…';
+  try {
+    var r=await fetch('/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({name:qs('login-name').value.trim(),password:qs('login-pass').value}),credentials:'same-origin'});
+    var j=await r.json();
+    if(r.ok&&j.success){ app.user=j.user; showApp(); } else { err.textContent=j.error||'用户名或密码错误'; }
+  } catch(_){ err.textContent='无法连接服务器'; }
+  finally { btn.disabled=false; btn.textContent='登 录'; }
+});
+qs('logout-btn').addEventListener('click', async function(){
+  try{ await fetch('/api/auth/logout',{method:'POST',credentials:'same-origin'}); }catch(_){}
+  app.user=null; qs('login-name').value=''; qs('login-pass').value=''; qs('login-err').textContent=''; showLogin();
+});
+qs('refresh-btn').addEventListener('click', load);
+
+/* ---------------- 视图 ---------------- */
+function showLogin(){
+  qs('login-overlay').classList.remove('hidden'); qs('header').hidden=true;
+  document.querySelector('.systems').hidden=true; document.querySelector('.wrap').hidden=true;
+}
+function showApp(){
+  qs('login-overlay').classList.add('hidden'); qs('header').hidden=false;
+  document.querySelector('.systems').hidden=false; document.querySelector('.wrap').hidden=false;
+  qs('userchip').style.display='flex';
+  qs('u-avatar').textContent=(app.user.display_name||app.user.name||'?').charAt(0).toUpperCase();
+  qs('u-name').textContent=(app.user.display_name||app.user.name)+' ('+app.user.name+')';
+  var rb=qs('u-role');
+  if(app.user.role==='admin'){ rb.className='role-badge admin'; rb.textContent='管理员'; rb.style.display='inline-block'; }
+  else{ rb.className='role-badge owner'; rb.textContent='域负责人'; rb.style.display='inline-block'; }
+  qs('whoami').style.display='inline'; qs('whoami').textContent='以 '+(app.user.display_name||app.user.name)+' 身份登录';
+  initSelectors().then(load);
+}
+
+/* ---------------- 区块下拉数据源 ---------------- */
+function fillSelect(el, opts, preferred){
+  // opts: [{value,label}]; preferred 命中则选中
+  el.innerHTML='';
+  if(!opts.length){ var o=document.createElement('option'); o.textContent='无'; el.appendChild(o); return; }
+  if(opts.every(function(x){return x.value!==preferred;})) preferred=null;
+  opts.forEach(function(x){
+    var op=document.createElement('option'); op.value=x.value; op.textContent=x.label;
+    if(x.value===preferred) op.selected=true; el.appendChild(op);
+  });
+}
+async function initSelectors(){
+  // JIRA 项目 (Bug 区块)
+  try{
+    var r=await fetch('/api/jira-projects',{credentials:'same-origin'});
+    var j=await r.json();
+    app.jiraProjects=j.projects||[];
+    var pre=localStorage.getItem('kpi_jira_project')||'';
+    var opts=[{value:'',label:'全部聚合'}].concat(app.jiraProjects.map(function(p){return {value:p.key,label:p.key+' ('+p.bugs+')'};}));
+    fillSelect(qs('jira-project-select'), opts, pre);
+    app.jiraProject = localStorage.getItem('kpi_jira_project')||'';
+  }catch(_){ qs('jira-project-select').innerHTML='<option>无</option>'; }
+  // 日报项目 (Daily Task 区块)
+  try{
+    var r=await fetch('/api/daily-projects',{credentials:'same-origin'});
+    var j=await r.json();
+    app.dailyProjects=j.projects||[];
+    var pre=localStorage.getItem('kpi_daily_project')||(app.dailyProjects.some(function(x){return x.id==='gpu-bringup';})?'gpu-bringup':(app.dailyProjects[0]&&app.dailyProjects[0].id)||'');
+    fillSelect(qs('daily-project-select'), app.dailyProjects.map(function(p){return {value:p.id,label:p.name};}), pre);
+    app.dailyProject=pre;
+  }catch(_){ qs('daily-project-select').innerHTML='<option>无</option>'; }
+  // 硬件项目
+  try{
+    var r=await fetch('/api/projects',{credentials:'same-origin'});
+    var j=await r.json();
+    app.hwProjects=j.projects||[];
+    var pre=localStorage.getItem('kpi_project')||'BR288Y';
+    fillSelect(qs('hw-project-select'), app.hwProjects.map(function(p){return {value:p,label:p};}), pre);
+    app.hwProject=pre;
+  }catch(_){ qs('hw-project-select').innerHTML='<option>无</option>'; }
+  // Test 项目 + Test Plan (测试用例区块)
+  try{
+    var r=await fetch('/api/testcase-projects',{credentials:'same-origin'});
+    var j=await r.json();
+    app.tcProjects=j.projects||[];
+    var pre=localStorage.getItem('kpi_tc_project')||(app.tcProjects.some(function(x){return x.key==='BR200';})?'BR200':(app.tcProjects[0]&&app.tcProjects[0].key)||'');
+    fillSelect(qs('tc-project-select'), app.tcProjects.map(function(p){return {value:p.key,label:p.key};}), pre);
+    app.tcProject=pre;
+    await fillTcPlans(app.tcProject);
+  }catch(_){ qs('tc-project-select').innerHTML='<option>无</option>'; }
+}
+
+// 加载某 Test 项目下的 Test Plan 列表 (级联: 项目 -> 计划)
+async function fillTcPlans(project){
+  var pl=qs('tc-plan-select');
+  if(!project){ pl.innerHTML='<option>无</option>'; app.tcPlans=[]; app.tcPlan=''; return; }
+  try{
+    var r=await fetch('/api/testcase-plans?project='+encodeURIComponent(project),{credentials:'same-origin'});
+    var j=await r.json();
+    app.tcPlans=j.plans||[];
+    var saved=localStorage.getItem('kpi_tc_plan')||'';
+    var pre=(saved && app.tcPlans.some(function(p){return p.key===saved;}))?saved:'';
+    var opts=[{value:'',label:'全部计划'}].concat(app.tcPlans.map(function(p){return {value:p.key,label:(p.key+' '+p.summary).substring(0,42)};}));
+    fillSelect(pl, opts, pre);
+    app.tcPlan=pre;
+  }catch(_){ pl.innerHTML='<option>无</option>'; app.tcPlan=''; }
+}
+qs('jira-project-select').addEventListener('change', function(e){ app.jiraProject=e.target.value; localStorage.setItem('kpi_jira_project',e.target.value); load(); });
+qs('daily-project-select').addEventListener('change', function(e){ app.dailyProject=e.target.value; localStorage.setItem('kpi_daily_project',e.target.value); load(); });
+qs('hw-project-select').addEventListener('change', function(e){ app.hwProject=e.target.value; localStorage.setItem('kpi_project',e.target.value); load(); });
+qs('tc-project-select').addEventListener('change', async function(e){ app.tcProject=e.target.value; localStorage.setItem('kpi_tc_project',e.target.value); await fillTcPlans(app.tcProject); load(); });
+qs('tc-plan-select').addEventListener('change', function(e){ app.tcPlan=e.target.value; localStorage.setItem('kpi_tc_plan',e.target.value); load(); });
+
+/* ---------------- 渲染 ---------------- */
+function setStatus(id, ok, label){ var el=qs(id); if(!el)return; el.className='status '+(ok?'ok':'err'); el.querySelector('.dot').style.background=ok?'var(--green)':'var(--red)'; el.querySelector('span:last-child').textContent=ok?'正常':(label||'异常'); }
+function tile(con,num,label,sub){ var d=document.createElement('div'); d.className='tile'; var n=document.createElement('div'); n.className='num'; n.textContent=(num===undefined||num===null||num==='')?'–':num; var l=document.createElement('div'); l.className='lbl'; l.textContent=label; if(sub){var s=document.createElement('small'); s.textContent=sub; l.appendChild(s);} d.appendChild(n); d.appendChild(l); con.appendChild(d); }
+function setTxt(id,v){ var el=qs(id); if(el) el.textContent=(v===undefined||v===null||v==='')?'–':v; }
+function errTile(con,msg){ var e=document.createElement('div'); e.className='error-msg'; e.textContent=msg; con.appendChild(e); }
+
+function renderKPI(data){
+  ['kpi-gpu','kpi-daily','kpi-testcase','kpi-hw'].forEach(function(id){ qs(id).innerHTML=''; });
+  qs('daily-meta').textContent='';
+  qs('tc-meta').textContent='';
+
+  var gpu=data.gpu, daily=data.daily, tc=data.testcase, hw=data.hardware;
+
+  // JIRA Bug
+  var gk=qs('kpi-gpu');
+  if(gpu&&gpu.ok){ setStatus('st-gpu',true); var d=gpu.data;
+    setTxt('gpu-total',d.total);
+    tile(gk,d.total,'总Bug',d.selectedJiraProject?('项目: '+d.selectedJiraProject):('项目: '+d.projects));
+    tile(gk,d.open,'未关闭','Open + 进行中'); tile(gk,d.closed,'已关闭','');
+    tile(gk,d.todayNew,'今日新增',''); tile(gk,d.weekClosed,'本周关闭',''); tile(gk,d.overdue,'逾期 >14天','');
+  } else { setStatus('st-gpu',false); errTile(gk,(gpu&&gpu.error)?('获取失败: '+gpu.error):'数据不可用'); }
+
+  // Bringup Daily Task
+  var dk=qs('kpi-daily');
+  if(daily&&daily.ok){ var d=daily.data;
+    setTxt('d-domain',d.domains); setTxt('d-ecrate',d.ecRate+'%');
+    tile(dk,d.domains,'域数量','日报: '+d.selectedProject);
+    tile(dk,d.ecRate+'%','BU准出通过率',''); tile(dk,d.ecPass,'准出 Pass',d.ecTotal?'共 '+d.ecTotal+' 项':''); tile(dk,d.ecFail,'准出 Fail/待定','');
+    tile(dk,d.totalBugs,'手动Bug','未关闭 '+d.openBugs); tile(dk,d.progressCount,'每日进度条数','');
+    if(d.lastUpdated) qs('daily-meta').textContent='最近更新: '+d.lastUpdated;
+  } else { setTxt('d-domain','–'); setTxt('d-ecrate','–'); errTile(dk,(daily&&daily.error)?('获取失败: '+daily.error):'数据不可用'); }
+
+  // 测试用例
+  var tk=qs('kpi-testcase');
+  if(tc&&tc.ok){ setStatus('st-testcase',true); var d=tc.data;
+    setTxt('tc-total',d.total); setTxt('tc-done',d.done); setTxt('tc-progress',d.inprogress);
+    tile(tk,d.total,'总用例',d.selectedPlan?('计划 '+d.selectedPlan):('项目 '+d.selectedProject));
+    tile(tk,d.completed,'已完成','Done/Validated/Closed');
+    tile(tk,d.inprogress,'进行中',''); tile(tk,d.todo,'待处理',''); tile(tk,d.waived,'已豁免','WAIVED');
+    if(d.selectedPlan){ var plan=app.tcPlans.find(function(p){return p.key===d.selectedPlan;}); var m=(plan?('['+(plan.status||'')+'] '+(plan.summary||'')):d.selectedPlan); if(d.planCount>1){ m+=' · 含子计划 '+d.planCount+' 个'; } qs('tc-meta').textContent=m; }
+    else qs('tc-meta').textContent='项目 '+d.selectedProject+' 全部用例';
+  } else { setStatus('st-testcase',false); errTile(tk,(tc&&tc.error)?('获取失败: '+tc.error):'数据不可用'); }
+
+  // 硬件预约
+  var hk=qs('kpi-hw');
+  if(hw&&hw.ok){ setStatus('st-hw',true); var d=hw.data;
+    setTxt('hw-stage',d.currentStage); setTxt('hw-inuse',d.inUse); setTxt('hw-idle',d.idle);
+    tile(hk,d.currentStage,'当前阶段',''+d.activeReservationCount+' 个活跃预约');
+    tile(hk,d.totalPlatforms,'平台总数','项目: '+(d.selectedProject||'全部'));
+    tile(hk,d.inUse,'在用',''); tile(hk,d.idle,'空闲','');
+    tile(hk,d.activeTeams,'活跃团队','共 '+d.totalTeams+' 个团队'); tile(hk,d.activeAllocTeams,'阶段分配团队','');
+    if(d.stages&&d.stages.length){
+      var track=document.createElement('div'); track.className='stagetrack';
+      d.stages.forEach(function(s){
+        var c=document.createElement('div');
+        c.className='stagechip'+(s.id===d.currentStage?' active':'');
+        c.innerHTML='<span style="color:'+s.color+'">'+s.name+'</span><span class="sw">'+s.start_week+'~'+s.end_week+'</span>'+(s.id===d.currentStage?'<span class="tag">当前</span>':'');
+        track.appendChild(c);
+      });
+      hk.appendChild(track);
+    }
+  } else { setStatus('st-hw',false); errTile(hk,(hw&&hw.error)?('获取失败: '+hw.error):'数据不可用'); }
+}
+
+async function load(){
+  var btn=qs('refresh-btn'); btn.disabled=true; btn.textContent='⟳ 刷新中…';
+  var params=[];
+  if(app.hwProject) params.push('project='+encodeURIComponent(app.hwProject));
+  if(app.jiraProject) params.push('jiraProject='+encodeURIComponent(app.jiraProject));
+  if(app.dailyProject) params.push('dailyProject='+encodeURIComponent(app.dailyProject));
+  if(app.tcProject) params.push('tcProject='+encodeURIComponent(app.tcProject));
+  if(app.tcPlan) params.push('tcPlan='+encodeURIComponent(app.tcPlan));
+  var qs_=params.length?('?'+params.join('&')):'';
+  try{
+    var r=await fetch('/api/kpis'+qs_,{cache:'no-store',credentials:'same-origin'});
+    if(r.status===401){ showLogin(); return; }
+    var j=await r.json();
+    renderKPI(j);
+    var t=new Date(j.generatedAt);
+    qs('update-time').textContent=t.toLocaleTimeString('zh-CN',{hour12:false});
+  }catch(_){ setStatus('st-gpu',false,'连接失败'); setStatus('st-testcase',false,'连接失败'); setStatus('st-hw',false,'连接失败'); }
+  finally{ btn.disabled=false; btn.textContent='⟳ 刷新'; }
+}
+
+/* ---------------- 初始化 ---------------- */
+(function init(){
+  showLogin();
+  fetch('/api/auth/me',{credentials:'same-origin'}).then(function(r){ return r.json(); }).then(function(j){
+    if(j.success){ app.user=j.user; showApp(); }
+  }).catch(function(){ /* 保持登录页 */ });
+})();
+setInterval(function(){ if(app.user) load(); }, 30000);
+</script>
+</body>
+</html>
