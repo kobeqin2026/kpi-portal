@@ -1,6 +1,6 @@
 {
   "name": "kpi-portal",
-  "version": "0.5.0",
+  "version": "1.0.0",
   "private": true,
   "description": "GPU Bring-up 统一门户 - aggregates KPI from gpu-tracker, jira-testcase, hardware-reservation",
   "main": "server.js",

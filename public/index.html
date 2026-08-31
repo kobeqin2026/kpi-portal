@@ -35,6 +35,7 @@
   .role-badge { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 11px; font-weight: 700; }
   .role-badge.admin { background: rgba(181,123,255,.16); color: var(--purple); }
   .role-badge.owner { background: rgba(34,211,238,.14); color: var(--teal); }
+  .role-badge.user { background: rgba(61,220,132,.14); color: var(--green); }
   .btn { background: var(--panel2); color: var(--text); border: 1px solid var(--border); padding: 8px 16px; border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: 600; transition: .18s; white-space: nowrap; }
   .btn:hover { border-color: var(--accent); background: #232c44; }
   .btn:disabled { opacity: .5; cursor: not-allowed; }
@@ -110,7 +111,7 @@
     <div class="lg">
       <div class="ic">🚀</div>
       <h2>GPU Bring-up <span>统一门户</span></h2>
-      <p>请使用 Hardware 平台账号登录（管理员 / 域负责人）</p>
+      <p>请使用 Hardware 平台账号登录（管理员 / 域负责人 / 普通用户）</p>
     </div>
     <label for="login-name">用户名</label>
     <input id="login-name" type="text" placeholder="如 admin / board" required>
@@ -151,10 +152,10 @@
       <span><h3>GPU Bring-up 日报 & Bug</h3><div class="url">10.49.5.188:8088</div></span>
     </div>
     <span class="status" id="st-gpu"><span class="dot"></span><span>检测中</span></span>
-    <div class="src">数据源：每日任务 <b>手动录入</b> / JIRA Bug <b>来自 JIRA</b></div>
+    <div class="src">数据源：每日任务 / JIRA Bug <b>来自 JIRA</b></div>
     <div class="mini">
       <div class="kv"><b id="gpu-total">–</b><span>JIRA总Bug</span></div>
-      <div class="kv"><b id="d-domain">–</b><span>域数量</span></div>
+      <div class="kv"><b id="d-domain">–</b><span>Exit Criteria</span></div>
       <div class="kv"><b id="d-ecrate">–</b><span>BU准出通过</span></div>
     </div>
     <span class="goto">进入系统 <span>→</span></span>
@@ -174,10 +175,9 @@
   </a>
   <a class="sys" data-color="#3ddc84" href="http://10.49.5.188:3002/" target="_blank">
     <div class="top"><span class="ic">🖥️</span>
-      <span><h3>硬件资源预约</h3><div class="url">10.49.5.188:3002</div></span>
+      <span><h3>硬件资源管理</h3><div class="url">10.49.5.188:3002</div></span>
     </div>
     <span class="status" id="st-hw"><span class="dot"></span><span>检测中</span></span>
-    <div class="src">数据源：<b>手动录入</b></div>
     <div class="mini">
       <div class="kv"><b id="hw-stage">–</b><span>当前阶段</span></div>
       <div class="kv"><b id="hw-inuse">–</b><span>在用平台</span></div>
@@ -198,7 +198,7 @@
 
   <!-- Bringup Daily Task (8088 手录) -->
   <div class="kpi-card" style="--sys-color:#ff9f43">
-    <div class="head"><span class="bar"></span><h2>📋 Bringup Daily Task（手动录入）</h2>
+    <div class="head"><span class="bar"></span><h2>📋 Bringup Daily Task</h2>
       <span class="scope"><span>日报项目</span><select id="daily-project-select"><option>加载中…</option></select></span>
       <a href="http://10.49.5.188:8088/gpu-bringup/" target="_blank">打开日报 ↗</a></div>
     <div class="kpis" id="kpi-daily"></div>
@@ -217,9 +217,9 @@
 
   <!-- 硬件预约 (3002) -->
   <div class="kpi-card" style="--sys-color:#3ddc84">
-    <div class="head"><span class="bar"></span><h2>🖥️ 硬件资源预约（手动录入）</h2>
+    <div class="head"><span class="bar"></span><h2>🖥️ 硬件资源管理</h2>
       <span class="scope"><span>硬件项目</span><select id="hw-project-select"><option>加载中…</option></select></span>
-      <a href="http://10.49.5.188:3002/" target="_blank">打开预约平台 ↗</a></div>
+      <a href="http://10.49.5.188:3002/" target="_blank">打开管理平台 ↗</a></div>
     <div class="kpis" id="kpi-hw"></div>
   </div>
 </div>
@@ -252,6 +252,9 @@ qs('logout-btn').addEventListener('click', async function(){
 qs('refresh-btn').addEventListener('click', load);
 
 /* ---------------- 视图 ---------------- */
+// 真域负责人登录名集合: 与 gpu-tracker public/js/utils.js DOMAIN_OWNER_USER_KEY 保持一致
+// (hardware 库 owner 回退用户若不在该列表 = 普通浏览用户, 如 biren 只读账号 → 显示"普通用户")
+var REAL_DOMAIN_OWNERS = ['board','firmware','diag','jtag','ethernet','pcie','hbm','ucie','slt','ppo','swci','swmodel','swtool','kmd','umd','video'];
 function showLogin(){
   qs('login-overlay').classList.remove('hidden'); qs('header').hidden=true;
   document.querySelector('.systems').hidden=true; document.querySelector('.wrap').hidden=true;
@@ -263,8 +266,10 @@ function showApp(){
   qs('u-avatar').textContent=(app.user.display_name||app.user.name||'?').charAt(0).toUpperCase();
   qs('u-name').textContent=(app.user.display_name||app.user.name)+' ('+app.user.name+')';
   var rb=qs('u-role');
+  var uname=String(app.user.name||'').toLowerCase();
   if(app.user.role==='admin'){ rb.className='role-badge admin'; rb.textContent='管理员'; rb.style.display='inline-block'; }
-  else{ rb.className='role-badge owner'; rb.textContent='域负责人'; rb.style.display='inline-block'; }
+  else if(REAL_DOMAIN_OWNERS.indexOf(uname)>=0){ rb.className='role-badge owner'; rb.textContent='域负责人'; rb.style.display='inline-block'; }
+  else{ rb.className='role-badge user'; rb.textContent='普通用户'; rb.style.display='inline-block'; }
   qs('whoami').style.display='inline'; qs('whoami').textContent='以 '+(app.user.display_name||app.user.name)+' 身份登录';
   initSelectors().then(load);
 }
@@ -367,8 +372,8 @@ function renderKPI(data){
   // Bringup Daily Task
   var dk=qs('kpi-daily');
   if(daily&&daily.ok){ var d=daily.data;
-    setTxt('d-domain',d.domains); setTxt('d-ecrate',d.ecRate+'%');
-    tile(dk,d.domains,'域数量','日报: '+d.selectedProject);
+    setTxt('d-domain',d.ecTotal); setTxt('d-ecrate',d.ecRate+'%');
+    tile(dk,d.ecTotal,'Exit Criteria 数量','日报: '+d.selectedProject);
     tile(dk,d.ecRate+'%','BU准出通过率',''); tile(dk,d.ecPass,'准出 Pass',d.ecTotal?'共 '+d.ecTotal+' 项':''); tile(dk,d.ecFail,'准出 Fail/待定','');
     tile(dk,d.totalBugs,'手动Bug','未关闭 '+d.openBugs); tile(dk,d.progressCount,'每日进度条数','');
     if(d.lastUpdated) qs('daily-meta').textContent='最近更新: '+d.lastUpdated;

@@ -1,6 +1,6 @@
 // GPU Bring-up 统一门户聚合后端
 // 聚合三大系统的关键 KPI:
-//   1) GPU Daily Tracker / JIRA bug diag -> 直连 JIRA 查询 Bug (GPU1, MPW2, BR188, BR200)
+//   1) GPU Daily Tracker / JIRA bug diag -> 直连 JIRA 查询 Bug (GPU1, MPW2, BR188, BR288X, BR288Y)
 //   2) JIRA Test Case Manager            -> 直连 JIRA 查询 BR200 Sub-task
 //   3) Hardware Reservation Allocation   -> 拉取本机 :3002 公开 API (按 project 过滤)
 //
@@ -21,7 +21,7 @@ require('dotenv').config({ path: '/home/br188/skills/.env' });
 var PORT = process.env.PORT || 3005;
 var JIRA_BASE = (process.env['JIRA_BASE_URL'] || 'https://jira01.birentech.com').replace(/\/+$/, '');
 var JIRA_PAT = process.env['JIRA_PAT'] || '';
-var BUG_PROJECTS = ['GPU1', 'MPW2', 'BR188', 'BR200'];
+var BUG_PROJECTS = ['GPU1', 'MPW2', 'BR188', 'BR288X', 'BR288Y'];
 var TESTCASE_PROJECT = 'BR200';
 var HW_BASE = 'http://127.0.0.1:3002';
 var app = express();
