@@ -33,7 +33,7 @@
 | 区块 | 系统(端口) | 数据来源 | 项目维度 |
 |------|-----------|----------|----------|
 | JIRA Bug 诊断 | 8088 Bug 子系统 | 来自 JIRA | JIRA 项目 DEMO-A / DEMO-B / DEMO-C / DEMO-TC |
-| Bringup Daily Task | 8088 日报子系统 | 手动录入 | gpu-tracker 日报项目 gpu-bringup / project-2 / taihu |
+| Bringup Daily Task | 8088 日报子系统 | 手动录入 | gpu-tracker 日报项目（配置于 `DAILY_PROJECT`，如 demo-bringup） |
 | 测试用例 | 8089 | 来自 JIRA | Test 项目 + Test Plan（级联 `?tcProject=` / `?tcPlan=`） |
 | 硬件资源管理 | 3002 | 手动录入 | 硬件项目 DEMO-HW / DEMO-D / DEMO-E |
 
@@ -49,6 +49,7 @@
 - 角色沿用 `admin` / `owner`（域负责人）；门户本身**只读**，两者均可查看 KPI，角色仅影响徽章显示（管理员 / 域负责人）。
 - 同一账号体系：gpu-tracker(8088) 登录也回退 Hardware 用户库——改 Hardware `users` 表同时影响门户与 8088 登录。8089 jira-testcase 用独立登录，不受影响。
 - **已知限制**：会话在内存中，PM2 重启后所有人需重新登录。
+
 
 
 ---
@@ -109,7 +110,7 @@ sudo nginx -t && sudo nginx -s reload    # 注意：本机 nginx 非 systemd 管
 ```
 
 - JIRA 连接信息（`JIRA_PAT` / `JIRA_BASE_URL`）在 `~/skills/.env`，服务启动时加载；换 token 只改 .env 即可。
-- 门户/页面里的跳转地址由 `public/index.html` 运行时通过 `location.hostname` 动态注入（`__HOST__` 占位，部署零配置、公开仓库不含内网 IP）。
+- 门户/页面里的跳转地址由 `public/index.html` 运行时通过 `location.hostname` 动态注入（`__HOST__`/`__DPATH__` 占位，部署零配置、公开仓库不含内网 IP/项目名）。
 
 ---
 
@@ -118,7 +119,7 @@ sudo nginx -t && sudo nginx -s reload    # 注意：本机 nginx 非 systemd 管
 对**运行中的部署**（localhost）用 HTTP cookie 会话实测：
 
 - 未登录 `/api/kpis` → 401；admin 登录 → 四区块 `{ok:true}`
-- `/api/jira-projects` 含 DEMO-TC；`/api/daily-projects` 含 gpu-bringup；`/api/projects` 含 DEMO-E
+- `/api/jira-projects` 含 DEMO-TC；`/api/daily-projects` 含 DAILY_PROJECT 配置项目；`/api/projects` 含 DEMO-E
 - `/api/kpis?jiraProject=DEMO-TC` → `gpu.data.total==7`；无参数 → 总数 120
 - `/api/kpis?tcProject=DEMO-TC&tcPlan=DEMO-TC-99` → total==23；`&tcPlan=DEMO-TC-123`（父计划）→ total==378、planCount==22（BFS 子计划聚合）
 - `/api/kpis?project=DEMO-D` → `hardware.data.selectedProject=="DEMO-D"`（DEMO-E 与 DEMO-D 都是 15 平台，用 selectedProject 区分）
@@ -141,7 +142,7 @@ package.json            依赖 (express / cookie-parser / dotenv)
 ## 8. 版本历史
 
 ### v1.0.0 (2026-08-31)
-- **徽章三分支**：`admin`→管理员、owner 且在 `REAL_DOMAIN_OWNERS`（16 个真域负责人登录名，与 gpu-tracker `DOMAIN_OWNER_USER_KEY` 同名单）→域负责人、其余 owner（如 biren 只读账号）→普通用户（绿色徽章）。
+- **徽章三分支**：`admin`→管理员、owner 且在 `REAL_DOMAIN_OWNERS`（16 个真域负责人登录名，与 gpu-tracker `DOMAIN_OWNER_USER_KEY` 同名单）→域负责人、其余 owner（如只读账号）→普通用户（绿色徽章）。
 - **JIRA Bug 项目列表修正**：废弃已不存在的 DEMO-TC 旧 key（DEMO-D 重命名遗留别名）→ 使用真实 key DEMO-A / DEMO-B / DEMO-C / DEMO-D / DEMO-E，下拉含「全部聚合」。
 - **系统卡 / 区块更名**：「硬件资源预约」→「硬件资源管理」、「打开预约平台」→「打开管理平台」；JIRA Bug 区块指标「域数量」→「Exit Criteria」。
 - **测试用例区块级联双下拉**：Test 项目 → Test Plan（`?tcProject=` / `?tcPlan=`），含子计划 BFS 聚合与「全部计划」。
@@ -158,10 +159,10 @@ package.json            依赖 (express / cookie-parser / dotenv)
 
 ## 9. 协同源码仓库
 
-本门户聚合的三个子系统源码（GitHub 公开仓库）：
+本门户聚合的三个子系统源码，GitLab 仓库如下：
 
-| 子系统（端口） | GitHub |
-|------|--------|
-| 8088 日报状态 / Bug 诊断（gpu-tracker） | https://github.com/kobeqin2026/enhanced-gpu-bu-daily-status-tracker |
-| 8089 JIRA 用例管理 | https://github.com/kobeqin2026/jira-test-case-management |
-| 3002 硬件资源管理 | https://github.com/kobeqin2026/hardware-reservation-platform |
+| 子系统（端口） | GitLab E01718 | GitLab pel-val |
+|------|---------------|----------------|
+| 8088 日报状态 / Bug 诊断（gpu-tracker） | https://gitlab.example.com/E01718/gpu-tracker | https://gitlab.example.com/pel-val/validation/jira-diagnosis-platform |
+| 8089 JIRA 用例管理 | https://gitlab.example.com/E01718/jira-test-case-management | https://gitlab.example.com/pel-val/validation/jira-test-case-management |
+| 3002 硬件资源管理 | https://gitlab.example.com/E01718/hardware-reservation-platform | https://gitlab.example.com/pel-val/validation/hardware-reservation-platform |

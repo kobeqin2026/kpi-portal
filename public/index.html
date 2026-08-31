@@ -147,7 +147,7 @@
 
 <!-- 三个系统入口（纯跳转，不承载项目联动） -->
 <div class="systems">
-  <a class="sys" data-color="#4f8cff" href="http://__HOST__:8088/gpu-bringup/" target="_blank">
+  <a class="sys" data-color="#4f8cff" href="http://__HOST__:8088/__DPATH__/" target="_blank">
     <div class="top"><span class="ic">🐛</span>
       <span><h3>GPU Bring-up 日报 & Bug</h3><div class="url">__HOST__:8088</div></span>
     </div>
@@ -192,7 +192,7 @@
   <div class="kpi-card" style="--sys-color:#4f8cff">
     <div class="head"><span class="bar"></span><h2>🐛 JIRA Bug 诊断</h2>
       <span class="scope"><span>JIRA项目</span><select id="jira-project-select"><option>加载中…</option></select></span>
-      <a href="http://__HOST__:8088/gpu-bringup/" target="_blank">打开 Dashboard ↗</a></div>
+      <a href="http://__HOST__:8088/__DPATH__/" target="_blank">打开 Dashboard ↗</a></div>
     <div class="kpis" id="kpi-gpu"></div>
   </div>
 
@@ -200,7 +200,7 @@
   <div class="kpi-card" style="--sys-color:#ff9f43">
     <div class="head"><span class="bar"></span><h2>📋 Bringup Daily Task</h2>
       <span class="scope"><span>日报项目</span><select id="daily-project-select"><option>加载中…</option></select></span>
-      <a href="http://__HOST__:8088/gpu-bringup/" target="_blank">打开日报 ↗</a></div>
+      <a href="http://__HOST__:8088/__DPATH__/" target="_blank">打开日报 ↗</a></div>
     <div class="kpis" id="kpi-daily"></div>
     <div class="meta" id="daily-meta"></div>
   </div>
@@ -263,7 +263,7 @@ qs('refresh-btn').addEventListener('click', load);
 
 /* ---------------- 视图 ---------------- */
 // 真域负责人登录名集合: 与 gpu-tracker public/js/utils.js DOMAIN_OWNER_USER_KEY 保持一致
-// (hardware 库 owner 回退用户若不在该列表 = 普通浏览用户, 如 biren 只读账号 → 显示"普通用户")
+// (hardware 库 owner 回退用户若不在该列表 = 普通浏览用户, 只读 → 显示"普通用户")
 var REAL_DOMAIN_OWNERS = ['board','firmware','diag','jtag','ethernet','pcie','hbm','ucie','slt','ppo','swci','swmodel','swtool','kmd','umd','video'];
 function showLogin(){
   qs('login-overlay').classList.remove('hidden'); qs('header').hidden=true;
@@ -311,7 +311,7 @@ async function initSelectors(){
     var r=await fetch('/api/daily-projects',{credentials:'same-origin'});
     var j=await r.json();
     app.dailyProjects=j.projects||[];
-    var pre=localStorage.getItem('kpi_daily_project')||(app.dailyProjects.some(function(x){return x.id==='gpu-bringup';})?'gpu-bringup':(app.dailyProjects[0]&&app.dailyProjects[0].id)||'');
+    var pre=localStorage.getItem('kpi_daily_project')||(app.dailyProjects[0]&&app.dailyProjects[0].id)||'';
     fillSelect(qs('daily-project-select'), app.dailyProjects.map(function(p){return {value:p.id,label:p.name};}), pre);
     app.dailyProject=pre;
   }catch(_){ qs('daily-project-select').innerHTML='<option>无</option>'; }

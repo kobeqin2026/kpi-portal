@@ -25,6 +25,8 @@ var JIRA_PAT = process.env['JIRA_PAT'] || '';
 // JIRA 项目名从环境注入, 代码不含内网项目名(默认仅占位示例; 生产经 ~/skills/.env 的 BUG_PROJECTS/TESTCASE_PROJECT 提供)
 var BUG_PROJECTS = (process.env['BUG_PROJECTS'] || 'DEMO-A,DEMO-B,DEMO-C').split(',').map(function(s){ return s.trim(); }).filter(Boolean);
 var TESTCASE_PROJECT = process.env['TESTCASE_PROJECT'] || 'DEMO-TC';
+// 日报子系统默认项目(env 注入; 默认仅占位)
+var DAILY_PROJECT = process.env['DAILY_PROJECT'] || 'demo-bringup';
 var HW_BASE = 'http://127.0.0.1:3002';
 var app = express();
 
@@ -312,7 +314,7 @@ async function hardwareKpis(project) {
 // Bringup Daily Task (gpu-tracker 手动录入子系统) KPI + JIRA 项目计数
 // ---------------------------------------------------------------------------
 async function dailyTaskKpis(project) {
-  var p = project || 'gpu-bringup';
+  var p = project || DAILY_PROJECT;
   var data = await httpGetJson('http://127.0.0.1:3000/api/data?project=' + encodeURIComponent(p));
   var domains = data.domains || [];
   var bugs = data.bugs || [];
@@ -498,6 +500,15 @@ app.get('/api/kpis', auth, async function (req, res) {
   res.json(out);
 });
 
+// 动态注入日报项目路径占位(公开仓不含内网项目名; 部署时经 env DAILY_PROJECT 注入)
+app.use(function(req, res, next){
+  if (req.path === '/' || req.path === '/index.html') {
+    var html = require('fs').readFileSync(path.join(__dirname, 'public', 'index.html'), 'utf8')
+      .split('__DPATH__').join(DAILY_PROJECT);
+    return res.send(html);
+  }
+  next();
+});
 // 静态门户页面
 app.use(express.static(path.join(__dirname, 'public')));
 app.get('/', function (req, res) {
