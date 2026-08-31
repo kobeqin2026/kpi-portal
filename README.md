@@ -1,6 +1,6 @@
 # GPU Bring-up 统一门户 (kpi-portal) — v1.0.0
 
-聚合 GPU 芯片 Bring-up 三大子系统的核心 KPI，单页看板 + 点击跳转各系统。部署地址：**http://10.49.5.188:8090/**
+聚合 GPU 芯片 Bring-up 三大子系统的核心 KPI，单页看板 + 点击跳转各系统。部署地址：**http://<服务器IP>:8090/**
 
 - **前端**：`public/index.html` 单页(深色主题，30s 自动刷新)
 - **后端**：`server.js` — Express，端口 **3005**，PM2 `kpi-portal` 托管
@@ -50,7 +50,6 @@
 - 同一账号体系：gpu-tracker(8088) 登录也回退 Hardware 用户库——改 Hardware `users` 表同时影响门户与 8088 登录。8089 jira-testcase 用独立登录，不受影响。
 - **已知限制**：会话在内存中，PM2 重启后所有人需重新登录。
 
-默认账号（Hardware 平台既有）：`admin/admin123`（管理员）、各域账号 `xxx/xxx123`（owner，如 board/board123）。
 
 ---
 
@@ -110,7 +109,7 @@ sudo nginx -t && sudo nginx -s reload    # 注意：本机 nginx 非 systemd 管
 ```
 
 - JIRA 连接信息（`JIRA_PAT` / `JIRA_BASE_URL`）在 `~/skills/.env`，服务启动时加载；换 token 只改 .env 即可。
-- 门户/页面里的跳转地址（10.49.5.188 各端口）写死在 `public/index.html`，机房 IP 变更时需同步更新。
+- 门户/页面里的跳转地址由 `public/index.html` 运行时通过 `location.hostname` 动态注入（`__HOST__` 占位，部署零配置、公开仓库不含内网 IP）。
 
 ---
 
@@ -159,10 +158,10 @@ package.json            依赖 (express / cookie-parser / dotenv)
 
 ## 9. 协同源码仓库
 
-本门户聚合的三个子系统源码，GitLab 仓库如下：
+本门户聚合的三个子系统源码（GitHub 公开仓库）：
 
-| 子系统（端口） | GitLab E01718 | GitLab pel-val |
-|------|---------------|----------------|
-| 8088 日报状态 / Bug 诊断（gpu-tracker） | https://gitlab.birentech.com/E01718/gpu-tracker | https://gitlab.birentech.com/pel-val/validation/jira-diagnosis-platform |
-| 8089 JIRA 用例管理 | https://gitlab.birentech.com/E01718/jira-test-case-management | https://gitlab.birentech.com/pel-val/validation/jira-test-case-management |
-| 3002 硬件资源管理 | https://gitlab.birentech.com/E01718/hardware-reservation-platform | https://gitlab.birentech.com/pel-val/validation/hardware-reservation-platform |
+| 子系统（端口） | GitHub |
+|------|--------|
+| 8088 日报状态 / Bug 诊断（gpu-tracker） | https://github.com/kobeqin2026/enhanced-gpu-bu-daily-status-tracker |
+| 8089 JIRA 用例管理 | https://github.com/kobeqin2026/jira-test-case-management |
+| 3002 硬件资源管理 | https://github.com/kobeqin2026/hardware-reservation-platform |

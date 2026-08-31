@@ -19,7 +19,8 @@ var cookieParser = require('cookie-parser');
 require('dotenv').config({ path: '/home/br188/skills/.env' });
 
 var PORT = process.env.PORT || 3005;
-var JIRA_BASE = (process.env['JIRA_BASE_URL'] || 'https://jira01.birentech.com').replace(/\/+$/, '');
+// JIRA 地址/令牌均从环境注入(默认值仅为占位, 不含内网信息; 生产通过 ~/skills/.env 的 JIRA_BASE_URL 提供)
+var JIRA_BASE = (process.env['JIRA_BASE_URL'] || 'https://jira.example.com').replace(/\/+$/, '');
 var JIRA_PAT = process.env['JIRA_PAT'] || '';
 var BUG_PROJECTS = ['GPU1', 'MPW2', 'BR188', 'BR288X', 'BR288Y'];
 var TESTCASE_PROJECT = 'BR200';

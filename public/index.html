@@ -147,9 +147,9 @@
 
 <!-- 三个系统入口（纯跳转，不承载项目联动） -->
 <div class="systems">
-  <a class="sys" data-color="#4f8cff" href="http://10.49.5.188:8088/gpu-bringup/" target="_blank">
+  <a class="sys" data-color="#4f8cff" href="http://__HOST__:8088/gpu-bringup/" target="_blank">
     <div class="top"><span class="ic">🐛</span>
-      <span><h3>GPU Bring-up 日报 & Bug</h3><div class="url">10.49.5.188:8088</div></span>
+      <span><h3>GPU Bring-up 日报 & Bug</h3><div class="url">__HOST__:8088</div></span>
     </div>
     <span class="status" id="st-gpu"><span class="dot"></span><span>检测中</span></span>
     <div class="src">数据源：每日任务 / JIRA Bug <b>来自 JIRA</b></div>
@@ -160,9 +160,9 @@
     </div>
     <span class="goto">进入系统 <span>→</span></span>
   </a>
-  <a class="sys" data-color="#22d3ee" href="http://10.49.5.188:8089/" target="_blank">
+  <a class="sys" data-color="#22d3ee" href="http://__HOST__:8089/" target="_blank">
     <div class="top"><span class="ic">🧪</span>
-      <span><h3>JIRA Test Case 管理</h3><div class="url">10.49.5.188:8089</div></span>
+      <span><h3>JIRA Test Case 管理</h3><div class="url">__HOST__:8089</div></span>
     </div>
     <span class="status" id="st-testcase"><span class="dot"></span><span>检测中</span></span>
     <div class="src">数据源：<b>来自 JIRA</b>（BR200）</div>
@@ -173,9 +173,9 @@
     </div>
     <span class="goto">进入系统 <span>→</span></span>
   </a>
-  <a class="sys" data-color="#3ddc84" href="http://10.49.5.188:3002/" target="_blank">
+  <a class="sys" data-color="#3ddc84" href="http://__HOST__:3002/" target="_blank">
     <div class="top"><span class="ic">🖥️</span>
-      <span><h3>硬件资源管理</h3><div class="url">10.49.5.188:3002</div></span>
+      <span><h3>硬件资源管理</h3><div class="url">__HOST__:3002</div></span>
     </div>
     <span class="status" id="st-hw"><span class="dot"></span><span>检测中</span></span>
     <div class="mini">
@@ -192,7 +192,7 @@
   <div class="kpi-card" style="--sys-color:#4f8cff">
     <div class="head"><span class="bar"></span><h2>🐛 JIRA Bug 诊断</h2>
       <span class="scope"><span>JIRA项目</span><select id="jira-project-select"><option>加载中…</option></select></span>
-      <a href="http://10.49.5.188:8088/gpu-bringup/" target="_blank">打开 Dashboard ↗</a></div>
+      <a href="http://__HOST__:8088/gpu-bringup/" target="_blank">打开 Dashboard ↗</a></div>
     <div class="kpis" id="kpi-gpu"></div>
   </div>
 
@@ -200,7 +200,7 @@
   <div class="kpi-card" style="--sys-color:#ff9f43">
     <div class="head"><span class="bar"></span><h2>📋 Bringup Daily Task</h2>
       <span class="scope"><span>日报项目</span><select id="daily-project-select"><option>加载中…</option></select></span>
-      <a href="http://10.49.5.188:8088/gpu-bringup/" target="_blank">打开日报 ↗</a></div>
+      <a href="http://__HOST__:8088/gpu-bringup/" target="_blank">打开日报 ↗</a></div>
     <div class="kpis" id="kpi-daily"></div>
     <div class="meta" id="daily-meta"></div>
   </div>
@@ -210,7 +210,7 @@
     <div class="head"><span class="bar"></span><h2>🧪 测试用例（来自 JIRA）</h2>
       <span class="scope"><span>Test项目</span><select id="tc-project-select"><option>加载中…</option></select></span>
       <span class="scope"><span>Test Plan</span><select id="tc-plan-select" style="max-width:240px"><option>加载中…</option></select></span>
-      <a href="http://10.49.5.188:8089/" target="_blank">打开 Test Case 管理 ↗</a></div>
+      <a href="http://__HOST__:8089/" target="_blank">打开 Test Case 管理 ↗</a></div>
     <div class="kpis" id="kpi-testcase"></div>
     <div class="meta" id="tc-meta"></div>
   </div>
@@ -219,7 +219,7 @@
   <div class="kpi-card" style="--sys-color:#3ddc84">
     <div class="head"><span class="bar"></span><h2>🖥️ 硬件资源管理</h2>
       <span class="scope"><span>硬件项目</span><select id="hw-project-select"><option>加载中…</option></select></span>
-      <a href="http://10.49.5.188:3002/" target="_blank">打开管理平台 ↗</a></div>
+      <a href="http://__HOST__:3002/" target="_blank">打开管理平台 ↗</a></div>
     <div class="kpis" id="kpi-hw"></div>
   </div>
 </div>
@@ -227,6 +227,16 @@
 <div class="foot">GPU Bring-up 统一门户 · 后端 kpi-portal (:3005) · 登录复用 Hardware 账号 · 各区块数据源独立</div>
 
 <script>
+/* ---------- 系统主机动态注入: 占位 __HOST__ → 当前访问主机名 ----------
+   公开仓库不含内网 IP; 部署时浏览器通过 location.hostname 自动取当前主机
+   (8090 与 8088/8089/3002 同主机, 访问者 hostname 即服务器地址) */
+var SYS_HOST = window.location.hostname || '127.0.0.1';
+(function(){
+  var as = document.querySelectorAll('a[href*="__HOST__"]');
+  for (var i=0;i<as.length;i++){ as[i].setAttribute('href', as[i].getAttribute('href').split('__HOST__').join(SYS_HOST)); }
+  var us = document.querySelectorAll('.url');
+  for (var j=0;j<us.length;j++){ us[j].textContent = us[j].textContent.split('__HOST__').join(SYS_HOST); }
+})();
 var app = { user: null, jiraProjects: [], dailyProjects: [], hwProjects: [], tcProjects: [], tcPlans: [],
             jiraProject: '', dailyProject: '', hwProject: '', tcProject: '', tcPlan: '' };
 
