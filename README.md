@@ -1,11 +1,11 @@
-# GPU Bring-up 统一门户 (kpi-portal) — v0.5.0
+# GPU Bring-up 统一门户 (kpi-portal) — v1.0.0
 
 聚合 GPU 芯片 Bring-up 三大子系统的核心 KPI，单页看板 + 点击跳转各系统。部署地址：**http://10.49.5.188:8090/**
 
 - **前端**：`public/index.html` 单页(深色主题，30s 自动刷新)
 - **后端**：`server.js` — Express，端口 **3005**，PM2 `kpi-portal` 托管
 - **Nginx**：端口 **8090**，静态页 + `/api/` 反代到 `127.0.0.1:3005`
-- **版本**：v0.5.0
+- **版本**：v1.0.0
 
 ---
 
