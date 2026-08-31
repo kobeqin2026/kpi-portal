@@ -165,7 +165,7 @@
       <span><h3>JIRA Test Case 管理</h3><div class="url">__HOST__:8089</div></span>
     </div>
     <span class="status" id="st-testcase"><span class="dot"></span><span>检测中</span></span>
-    <div class="src">数据源：<b>来自 JIRA</b>（BR200）</div>
+    <div class="src">数据源：<b>来自 JIRA</b></div>
     <div class="mini">
       <div class="kv"><b id="tc-total">–</b><span>总用例</span></div>
       <div class="kv"><b id="tc-done">–</b><span>已完成</span></div>
@@ -320,7 +320,7 @@ async function initSelectors(){
     var r=await fetch('/api/projects',{credentials:'same-origin'});
     var j=await r.json();
     app.hwProjects=j.projects||[];
-    var pre=localStorage.getItem('kpi_project')||'BR288Y';
+    var pre=localStorage.getItem('kpi_project')||(app.hwProjects.length?app.hwProjects[0]:'');
     fillSelect(qs('hw-project-select'), app.hwProjects.map(function(p){return {value:p,label:p};}), pre);
     app.hwProject=pre;
   }catch(_){ qs('hw-project-select').innerHTML='<option>无</option>'; }
@@ -329,7 +329,7 @@ async function initSelectors(){
     var r=await fetch('/api/testcase-projects',{credentials:'same-origin'});
     var j=await r.json();
     app.tcProjects=j.projects||[];
-    var pre=localStorage.getItem('kpi_tc_project')||(app.tcProjects.some(function(x){return x.key==='BR200';})?'BR200':(app.tcProjects[0]&&app.tcProjects[0].key)||'');
+    var pre=localStorage.getItem('kpi_tc_project')||(app.tcProjects[0]&&app.tcProjects[0].key)||'';
     fillSelect(qs('tc-project-select'), app.tcProjects.map(function(p){return {value:p.key,label:p.key};}), pre);
     app.tcProject=pre;
     await fillTcPlans(app.tcProject);

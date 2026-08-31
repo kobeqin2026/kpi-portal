@@ -32,12 +32,12 @@
 
 | 区块 | 系统(端口) | 数据来源 | 项目维度 |
 |------|-----------|----------|----------|
-| JIRA Bug 诊断 | 8088 Bug 子系统 | 来自 JIRA | JIRA 项目 GPU1 / MPW2 / BR188 / BR200 |
+| JIRA Bug 诊断 | 8088 Bug 子系统 | 来自 JIRA | JIRA 项目 DEMO-A / DEMO-B / DEMO-C / DEMO-TC |
 | Bringup Daily Task | 8088 日报子系统 | 手动录入 | gpu-tracker 日报项目 gpu-bringup / project-2 / taihu |
 | 测试用例 | 8089 | 来自 JIRA | Test 项目 + Test Plan（级联 `?tcProject=` / `?tcPlan=`） |
-| 硬件资源管理 | 3002 | 手动录入 | 硬件项目 BR209 / BR288X / BR288Y |
+| 硬件资源管理 | 3002 | 手动录入 | 硬件项目 DEMO-HW / DEMO-D / DEMO-E |
 
-**测试用例模型**：Test Plan = `issuetype="Test Plan"` 的 JIRA issue（BR200 有 23 个，如 BR200-99/123/130…），用例 = Sub-task 经 `parent=<PlanKey>` 挂到计划下。全球只有约 8 个项目有 Test Plan（BR200/BR100/BR166/BRHW200/BRNPI104/MPW2/BR110VAL/TPL），项目下拉据此筛选，避免列出全部 130 个 JIRA 项目。
+**测试用例模型**：Test Plan = `issuetype="Test Plan"` 的 JIRA issue（DEMO-TC 有 23 个，如 DEMO-TC-99/123/130…），用例 = Sub-task 经 `parent=<PlanKey>` 挂到计划下。全球只有约 8 个项目有 Test Plan（内部项目，名称略），项目下拉据此筛选，避免列出全部 130 个 JIRA 项目。
 
 ---
 
@@ -62,7 +62,7 @@
 | `GET /api/health` | 公开探活：`{ok, jiraConfigured}` |
 | `POST /api/auth/login` / `GET /api/auth/me` / `POST /api/auth/logout` | 认证流（复用硬件账号） |
 | `GET /api/projects` | 硬件项目列表 `{projects:[...]}` |
-| `GET /api/jira-projects` | JIRA 项目 + 对应 Bug 数（GPU1/MPW2/BR188/BR200） |
+| `GET /api/jira-projects` | JIRA 项目 + 对应 Bug 数（DEMO-A/DEMO-B/DEMO-C/DEMO-TC） |
 | `GET /api/daily-projects` | gpu-tracker 日报项目 |
 | `GET /api/testcase-projects` | 有 Test Plan 的 JIRA 项目（含 planCount） |
 | `GET /api/testcase-plans?project=X` | 该项目下的 Test Plan 列表 |
@@ -71,9 +71,9 @@
 `/api/kpis` 参数（均可选，服务端做 sanitize）：
 
 - `project` → 硬件区块（dashboard/stats + active-summary 过滤）
-- `jiraProject` → Bug 区块（JQL `project=X AND issuetype=Bug`；缺省聚合 GPU1/MPW2/BR188/BR200）
+- `jiraProject` → Bug 区块（JQL `project=X AND issuetype=Bug`；缺省聚合 DEMO-A/DEMO-B/DEMO-C/DEMO-TC）
 - `dailyProject` → 日报区块（poll `:3000/api/data?project=X`）
-- `tcProject` / `tcPlan` → 测试用例区块（默认 BR200；**选计划 = BFS 收集该计划 + 全部 outward "Test Plan" 关联子计划**（visited 防环、深度≤4、数量≤60），再 `parent in (...)` 汇总子任务；未选 = 统计整个项目 Sub-tasks）
+- `tcProject` / `tcPlan` → 测试用例区块（默认 DEMO-TC；**选计划 = BFS 收集该计划 + 全部 outward "Test Plan" 关联子计划**（visited 防环、深度≤4、数量≤60），再 `parent in (...)` 汇总子任务；未选 = 统计整个项目 Sub-tasks）
 
 返回 `{generatedAt, user, gpu, testcase, hardware, daily}`，每区块 `{ok:true,data}` 或 `{ok:false,error}`。四区块 `Promise.all` 并行、逐一 catch——单源故障不拖垮整页。
 
@@ -118,10 +118,10 @@ sudo nginx -t && sudo nginx -s reload    # 注意：本机 nginx 非 systemd 管
 对**运行中的部署**（localhost）用 HTTP cookie 会话实测：
 
 - 未登录 `/api/kpis` → 401；admin 登录 → 四区块 `{ok:true}`
-- `/api/jira-projects` 含 BR200；`/api/daily-projects` 含 gpu-bringup；`/api/projects` 含 BR288Y
-- `/api/kpis?jiraProject=BR200` → `gpu.data.total==7`；无参数 → 总数 120
-- `/api/kpis?tcProject=BR200&tcPlan=BR200-99` → total==23；`&tcPlan=BR200-123`（父计划）→ total==378、planCount==22（BFS 子计划聚合）
-- `/api/kpis?project=BR288X` → `hardware.data.selectedProject=="BR288X"`（BR288Y 与 BR288X 都是 15 平台，用 selectedProject 区分）
+- `/api/jira-projects` 含 DEMO-TC；`/api/daily-projects` 含 gpu-bringup；`/api/projects` 含 DEMO-E
+- `/api/kpis?jiraProject=DEMO-TC` → `gpu.data.total==7`；无参数 → 总数 120
+- `/api/kpis?tcProject=DEMO-TC&tcPlan=DEMO-TC-99` → total==23；`&tcPlan=DEMO-TC-123`（父计划）→ total==378、planCount==22（BFS 子计划聚合）
+- `/api/kpis?project=DEMO-D` → `hardware.data.selectedProject=="DEMO-D"`（DEMO-E 与 DEMO-D 都是 15 平台，用 selectedProject 区分）
 - 浏览器实测：登录 → 切各下拉 → 只刷新对应区块；控制台无 JS 错误
 
 ---
@@ -142,15 +142,15 @@ package.json            依赖 (express / cookie-parser / dotenv)
 
 ### v1.0.0 (2026-08-31)
 - **徽章三分支**：`admin`→管理员、owner 且在 `REAL_DOMAIN_OWNERS`（16 个真域负责人登录名，与 gpu-tracker `DOMAIN_OWNER_USER_KEY` 同名单）→域负责人、其余 owner（如 biren 只读账号）→普通用户（绿色徽章）。
-- **JIRA Bug 项目列表修正**：废弃已不存在的 BR200 旧 key（BR288X 重命名遗留别名）→ 使用真实 key GPU1 / MPW2 / BR188 / BR288X / BR288Y，下拉含「全部聚合」。
+- **JIRA Bug 项目列表修正**：废弃已不存在的 DEMO-TC 旧 key（DEMO-D 重命名遗留别名）→ 使用真实 key DEMO-A / DEMO-B / DEMO-C / DEMO-D / DEMO-E，下拉含「全部聚合」。
 - **系统卡 / 区块更名**：「硬件资源预约」→「硬件资源管理」、「打开预约平台」→「打开管理平台」；JIRA Bug 区块指标「域数量」→「Exit Criteria」。
 - **测试用例区块级联双下拉**：Test 项目 → Test Plan（`?tcProject=` / `?tcPlan=`），含子计划 BFS 聚合与「全部计划」。
 - nginx 出口 `Cache-Control: no-cache, no-store`（根治旧前端被浏览器缓存）。
 
 ### v0.5.0 (2026-08-10)
 - 首个提交到版本管理的完整版本。
-- 四区块 KPI 聚合：JIRA Bug（GPU1/MPW2/BR188/BR200）、Bringup Daily、测试用例（Test项目→Test Plan 级联）、硬件资源管理。
-- 三级 Test Plan 关联聚合（BFS outward 链接，解决 BR200-123 父计划 0 直接子任务问题）。
+- 四区块 KPI 聚合：JIRA Bug（DEMO-A/DEMO-B/DEMO-C/DEMO-TC）、Bringup Daily、测试用例（Test项目→Test Plan 级联）、硬件资源管理。
+- 三级 Test Plan 关联聚合（BFS outward 链接，解决 DEMO-TC-123 父计划 0 直接子任务问题）。
 - 登录复用 Hardware 用户库 + 会话 cookie（内存）。
 - 30s 自动刷新、深色单页、独立的 source-scoped 项目下拉（不做全局项目切换）。
 

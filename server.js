@@ -1,7 +1,7 @@
 // GPU Bring-up 统一门户聚合后端
 // 聚合三大系统的关键 KPI:
-//   1) GPU Daily Tracker / JIRA bug diag -> 直连 JIRA 查询 Bug (GPU1, MPW2, BR188, BR288X, BR288Y)
-//   2) JIRA Test Case Manager            -> 直连 JIRA 查询 BR200 Sub-task
+//   1) GPU Daily Tracker / JIRA bug diag -> 直连 JIRA 查询 Bug (项目列表经 env BUG_PROJECTS 注入)
+//   2) JIRA Test Case Manager            -> 直连 JIRA 查询 Test Plan 项目 Sub-task (env TESTCASE_PROJECT)
 //   3) Hardware Reservation Allocation   -> 拉取本机 :3002 公开 API (按 project 过滤)
 //
 // 登录复用 Hardware 平台用户库 (POST /api/users/login), 角色: admin / owner (域负责人)
@@ -22,8 +22,9 @@ var PORT = process.env.PORT || 3005;
 // JIRA 地址/令牌均从环境注入(默认值仅为占位, 不含内网信息; 生产通过 ~/skills/.env 的 JIRA_BASE_URL 提供)
 var JIRA_BASE = (process.env['JIRA_BASE_URL'] || 'https://jira.example.com').replace(/\/+$/, '');
 var JIRA_PAT = process.env['JIRA_PAT'] || '';
-var BUG_PROJECTS = ['GPU1', 'MPW2', 'BR188', 'BR288X', 'BR288Y'];
-var TESTCASE_PROJECT = 'BR200';
+// JIRA 项目名从环境注入, 代码不含内网项目名(默认仅占位示例; 生产经 ~/skills/.env 的 BUG_PROJECTS/TESTCASE_PROJECT 提供)
+var BUG_PROJECTS = (process.env['BUG_PROJECTS'] || 'DEMO-A,DEMO-B,DEMO-C').split(',').map(function(s){ return s.trim(); }).filter(Boolean);
+var TESTCASE_PROJECT = process.env['TESTCASE_PROJECT'] || 'DEMO-TC';
 var HW_BASE = 'http://127.0.0.1:3002';
 var app = express();
 
